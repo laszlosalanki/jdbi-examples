@@ -33,7 +33,8 @@ public class Main {
             }
 
             if (dao.getUsers().get(4) != null) {
-                System.out.printf("Getting the username of %d. user : %s%n", 4, dao.getUsers().get(4).getUsername());
+                System.out.printf("Getting User by username %s :%n", dao.getUsers().get(4).getUsername());
+                System.out.println(dao.getUserByUsername(dao.getUsers().get(4).getUsername()).get());
             }
 
             System.out.printf("Deleting user by id %d%n", id);
