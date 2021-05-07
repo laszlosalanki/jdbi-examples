@@ -1,7 +1,5 @@
 package user;
 
-import com.github.javafaker.Faker;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
@@ -12,18 +10,39 @@ public class Main {
 
     public static void main(String[] args) {
 
-        var faker = new Faker(new Locale("hu"));
         Jdbi jdbi = Jdbi.create("jdbc:h2:mem:test");
         jdbi.installPlugin(new SqlObjectPlugin());
-        User user1 = User.builder()
-                .username(faker.name().username())
-                .password(DigestUtils.md5Hex(faker.internet().password()))
-                .name(faker.name().fullName())
-                .email(faker.internet().emailAddress())
-                .gender(faker.options().option(User.class.getEnumConstants()))
-                .birthDate(faker.date().birthday())
-                .enabled(faker.bool().bool())
-                .build();
+
+        Locale l = Locale.getDefault();
+        FakeUserCreator fuc = new FakeUserCreator(l);
+
+        List<User> users = jdbi.withExtension(UserDao.class, dao -> {
+            dao.createTable();
+
+            for (int i = 0; i < 5; i++) {
+                User u = fuc.createFakeUser();
+                dao.insertUser(u);
+            }
+
+            Long id = 2L;
+
+            if (dao.getUserByID(id).isPresent()) {
+                User user1 = dao.getUserByID(id).get();
+                System.out.printf("Getting user by id %d%n", id);
+                System.out.println(user1);
+            }
+
+            if (dao.getUsers().get(4) != null) {
+                System.out.printf("Getting the username of %d. user : %s%n", 4, dao.getUsers().get(4).getUsername());
+            }
+
+            System.out.printf("Deleting user by id %d%n", id);
+            dao.deleteUser(dao.getUserByID(id).get());
+
+            return dao.getUsers();
+        });
+
+        users.forEach(System.out::println);
     }
 
 }
